@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole } from './entities/user.entity';
+import { User } from './entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
@@ -16,11 +16,8 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
     const user = this.userRepository.create({
-      name: registerDto.name,
-      email: registerDto.email,
+      ...registerDto,
       password: hashedPassword,
-      role: registerDto.role as UserRole, // Explicitly cast to UserRole
-      schoolId: registerDto.schoolId,
     });
     await this.userRepository.save(user);
     return { success: true, message: 'User registered successfully' };

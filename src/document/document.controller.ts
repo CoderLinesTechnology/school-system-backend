@@ -1,5 +1,5 @@
-import { Controller, Post, Get, Param, UseGuards, UploadedFile, Body, UseInterceptors } from '@nestjs/common';
-import { FileInterceptor, Multer } from '@nestjs/platform-express';
+import { Controller, Post, Get, Param, UseGuards, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentService } from './document.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateDocumentDto } from './dto/document.dto';
@@ -11,7 +11,7 @@ export class DocumentController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async upload(@UploadedFile() file: Multer.File, @Body() body: CreateDocumentDto) {
+  async upload(@UploadedFile() file: Express.Multer.File, @Body() body: CreateDocumentDto) {
     return this.documentService.upload({ ...body, file });
   }
 

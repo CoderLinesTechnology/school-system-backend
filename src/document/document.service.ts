@@ -29,9 +29,4 @@ export class DocumentService {
   async getClassDocuments(classId: string) {
     return this.documentRepository.find({ where: { classId, visibility: true } });
   }
-
-  async updateDocumentVisibility(id: string, update: { visibility: boolean }) {
-    await this.documentRepository.update(id, { visibility: update.visibility });
-    return this.documentRepository.findOne({ where: { id } });
-  }
 }

@@ -1,5 +1,3 @@
-import { Multer } from '@nestjs/platform-express';
-
 export class CreateAssessmentDto {
   studentId: string;
   subject: string;
@@ -9,7 +7,7 @@ export class CreateAssessmentDto {
 }
 
 export class CreateDocumentDto {
-  file: Multer.File;
+  file: Express.Multer.File;
   studentId?: string;
   classId?: string;
   visibility: boolean;
