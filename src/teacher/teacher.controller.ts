@@ -25,7 +25,7 @@ export class TeacherController {
 
   @Post('documents')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadDocument(@UploadedFile() file: Express.Multer.File, @Body() body: CreateDocumentDto) {
+  async uploadDocument(@UploadedFile() file: any, @Body() body: CreateDocumentDto) {
     return this.teacherService.uploadDocument({ ...body, file });
   }
 }

@@ -29,4 +29,10 @@ export class DocumentService {
   async getClassDocuments(classId: string) {
     return this.documentRepository.find({ where: { classId, visibility: true } });
   }
+
+  // Added the missing method that PaymentService was trying to use
+  async updateDocumentVisibility(documentId: string, updateData: { visibility: boolean }) {
+    await this.documentRepository.update(documentId, { visibility: updateData.visibility });
+    return this.documentRepository.findOne({ where: { id: documentId } });
+  }
 }

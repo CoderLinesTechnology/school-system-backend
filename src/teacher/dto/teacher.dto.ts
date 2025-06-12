@@ -7,7 +7,7 @@ export class CreateAssessmentDto {
 }
 
 export class CreateDocumentDto {
-  file: Express.Multer.File;
+  file: any; // Changed from Express.Multer.File to any
   studentId?: string;
   classId?: string;
   visibility: boolean;

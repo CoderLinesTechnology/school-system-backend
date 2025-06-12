@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, UseGuards, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Post, Get, Param, UseGuards, UploadedFile, UseInterceptors, Body } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentService } from './document.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
