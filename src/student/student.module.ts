@@ -1,15 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { StudentService } from './student.service';
 import { StudentController } from './student.controller';
-import { Student } from '../entities/student.entity';
-import { Document } from '../entities/document.entity';
-import { Assessment } from '../entities/assessment.entity';
-import { Payment } from '../entities/payment.entity';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Student, Document, Assessment, Payment])],
-  providers: [StudentService],
+  providers: [StudentService, SupabaseService],
   controllers: [StudentController],
 })
 export class StudentModule {}

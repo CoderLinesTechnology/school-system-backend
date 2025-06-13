@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { DocumentService } from './document.service';
 import { DocumentController } from './document.controller';
-import { Document } from '../entities/document.entity';
+import { SupabaseService } from '../supabase/supabase.service';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Document]),
     MulterModule.register({
       storage: diskStorage({
         destination: './uploads',
@@ -29,7 +27,7 @@ import { extname } from 'path';
       },
     }),
   ],
-  providers: [DocumentService],
+  providers: [DocumentService, SupabaseService],
   controllers: [DocumentController],
   exports: [DocumentService],
 })

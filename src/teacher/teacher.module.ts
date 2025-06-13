@@ -1,17 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { TeacherService } from './teacher.service';
 import { TeacherController } from './teacher.controller';
-import { Assessment } from '../entities/assessment.entity';
-import { Document } from '../entities/document.entity';
-import { Attendance } from '../entities/attendance.entity';
+import { SupabaseService } from '../supabase/supabase.service';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Assessment, Document, Attendance]),
     MulterModule.register({
       storage: diskStorage({
         destination: './uploads',
@@ -31,7 +27,7 @@ import { extname } from 'path';
       },
     }),
   ],
-  providers: [TeacherService],
+  providers: [TeacherService, SupabaseService],
   controllers: [TeacherController],
 })
 export class TeacherModule {}

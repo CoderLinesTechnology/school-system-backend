@@ -1,57 +1,84 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Payment, PaymentStatus } from '../entities/payment.entity';
-import { Document } from '../entities/document.entity';
+import { SupabaseService } from '../supabase/supabase.service';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { WebhookDto } from './dto/webhook.dto';
 
+export enum PaymentStatus {
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+}
+
 @Injectable()
 export class PaymentsService {
-  constructor(
-    @InjectRepository(Payment) private paymentRepository: Repository<Payment>,
-    @InjectRepository(Document) private documentRepository: Repository<Document>,
-  ) {}
+  constructor(private supabaseService: SupabaseService) {}
 
   async initiatePayment(dto: InitiatePaymentDto) {
-    const payment = this.paymentRepository.create({
-      student: { id: dto.studentId },
-      amount: dto.amount,
-      status: PaymentStatus.PENDING,
-      transaction_reference: `TX-${Date.now()}`,
-    });
-    return this.paymentRepository.save(payment);
+    const transactionReference = `TX-${Date.now()}`;
+    
+    const { data, error } = await this.supabaseService.getClient()
+      .from('payments')
+      .insert({
+        student_id: dto.studentId,
+        amount: dto.amount,
+        status: PaymentStatus.PENDING,
+        transaction_reference: transactionReference,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to initiate payment: ${error.message}`);
+    }
+    return data;
   }
 
   async getPaymentStatus(reference: string) {
-    const payment = await this.paymentRepository.findOne({
-      where: { transaction_reference: reference },
-      relations: ['student'],
-    });
-    if (!payment) {
+    const { data, error } = await this.supabaseService.getClient()
+      .from('payments')
+      .select('*, student:student_id(*)')
+      .eq('transaction_reference', reference)
+      .single();
+
+    if (error || !data) {
       throw new NotFoundException('Payment not found');
     }
-    return payment;
+    return data;
   }
 
   async handleWebhook(dto: WebhookDto) {
-    const payment = await this.paymentRepository.findOne({
-      where: { transaction_reference: dto.transactionReference },
-    });
-    if (!payment) {
+    const { data: payment, error: fetchError } = await this.supabaseService.getClient()
+      .from('payments')
+      .select('*')
+      .eq('transaction_reference', dto.transactionReference)
+      .single();
+
+    if (fetchError || !payment) {
       throw new NotFoundException('Payment not found');
     }
-    payment.status = dto.status as PaymentStatus;
-    await this.paymentRepository.save(payment);
+
+    // Update payment status
+    const { error: updateError } = await this.supabaseService.getClient()
+      .from('payments')
+      .update({ status: dto.status })
+      .eq('transaction_reference', dto.transactionReference);
+
+    if (updateError) {
+      throw new Error(`Failed to update payment: ${updateError.message}`);
+    }
+
+    // If payment completed and document specified, make document visible
     if (dto.status === PaymentStatus.COMPLETED && dto.documentId) {
-      const document = await this.documentRepository.findOne({
-        where: { id: dto.documentId },
-      });
-      if (document) {
-        document.visibility = true;
-        await this.documentRepository.save(document);
+      const { error: docError } = await this.supabaseService.getClient()
+        .from('documents')
+        .update({ visibility: true })
+        .eq('id', dto.documentId);
+
+      if (docError) {
+        console.error('Failed to update document visibility:', docError.message);
       }
     }
+
     return { success: true };
   }
 }

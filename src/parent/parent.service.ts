@@ -1,78 +1,111 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Parent } from '../entities/parent.entity';
-import { ParentStudent } from '../entities/parent-student.entity';
-import { Student } from '../entities/student.entity';
-import { Document } from '../entities/document.entity';
-import { Assessment } from '../entities/assessment.entity';
-import { Payment } from '../entities/payment.entity';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class ParentService {
-  constructor(
-    @InjectRepository(Parent) private parentRepository: Repository<Parent>,
-    @InjectRepository(ParentStudent) private parentStudentRepository: Repository<ParentStudent>,
-    @InjectRepository(Student) private studentRepository: Repository<Student>,
-    @InjectRepository(Document) private documentRepository: Repository<Document>,
-    @InjectRepository(Assessment) private assessmentRepository: Repository<Assessment>,
-    @InjectRepository(Payment) private paymentRepository: Repository<Payment>,
-  ) {}
+  constructor(private supabaseService: SupabaseService) {}
 
   async getProfile(parentId: number) {
-    const parent = await this.parentRepository.findOne({
-      where: { user: { id: parentId } },
-      relations: ['user'],
-    });
-    if (!parent) {
+    const { data, error } = await this.supabaseService.getClient()
+      .from('parents')
+      .select('*, user:user_id(*)')
+      .eq('user_id', parentId)
+      .single();
+
+    if (error || !data) {
       throw new NotFoundException('Parent not found');
     }
-    return parent;
+    return data;
   }
 
   async getChildren(parentId: number) {
-    const parentStudents = await this.parentStudentRepository.find({
-      where: { parent: { user: { id: parentId } } },
-      relations: ['student', 'student.user', 'student.class'],
-    });
-    return parentStudents.map(ps => ps.student);
+    const { data, error } = await this.supabaseService.getClient()
+      .from('parent_students')
+      .select(`
+        student:student_id(
+          *,
+          user:user_id(*),
+          class:class_id(*)
+        )
+      `)
+      .eq('parent_id', parentId);
+
+    if (error) {
+      throw new Error(`Failed to fetch children: ${error.message}`);
+    }
+    return data?.map(ps => ps.student) || [];
   }
 
   async getChildAssessments(studentId: number, parentId: number) {
-    const parentStudent = await this.parentStudentRepository.findOne({
-      where: { parent: { user: { id: parentId } }, student: { id: studentId } },
-    });
-    if (!parentStudent) {
+    // First verify parent-student relationship
+    const { data: parentStudent, error: relationError } = await this.supabaseService.getClient()
+      .from('parent_students')
+      .select('id')
+      .eq('parent_id', parentId)
+      .eq('student_id', studentId)
+      .single();
+
+    if (relationError || !parentStudent) {
       throw new NotFoundException('Student not linked to parent');
     }
-    return this.assessmentRepository.find({
-      where: { student: { id: studentId } },
-      relations: ['subject'],
-    });
+
+    const { data, error } = await this.supabaseService.getClient()
+      .from('assessments')
+      .select('*, subject:subject_id(*)')
+      .eq('student_id', studentId);
+
+    if (error) {
+      throw new Error(`Failed to fetch assessments: ${error.message}`);
+    }
+    return data;
   }
 
   async getChildDocuments(studentId: number, parentId: number) {
-    const parentStudent = await this.parentStudentRepository.findOne({
-      where: { parent: { user: { id: parentId } }, student: { id: studentId } },
-    });
-    if (!parentStudent) {
+    // First verify parent-student relationship
+    const { data: parentStudent, error: relationError } = await this.supabaseService.getClient()
+      .from('parent_students')
+      .select('id')
+      .eq('parent_id', parentId)
+      .eq('student_id', studentId)
+      .single();
+
+    if (relationError || !parentStudent) {
       throw new NotFoundException('Student not linked to parent');
     }
-    return this.documentRepository.find({
-      where: { student: { id: studentId }, visibility: true },
-      relations: ['uploaded_by'],
-    });
+
+    const { data, error } = await this.supabaseService.getClient()
+      .from('documents')
+      .select('*, uploaded_by:uploaded_by_id(*)')
+      .eq('student_id', studentId)
+      .eq('visibility', true);
+
+    if (error) {
+      throw new Error(`Failed to fetch documents: ${error.message}`);
+    }
+    return data;
   }
 
   async getChildPayments(studentId: number, parentId: number) {
-    const parentStudent = await this.parentStudentRepository.findOne({
-      where: { parent: { user: { id: parentId } }, student: { id: studentId } },
-    });
-    if (!parentStudent) {
+    // First verify parent-student relationship
+    const { data: parentStudent, error: relationError } = await this.supabaseService.getClient()
+      .from('parent_students')
+      .select('id')
+      .eq('parent_id', parentId)
+      .eq('student_id', studentId)
+      .single();
+
+    if (relationError || !parentStudent) {
       throw new NotFoundException('Student not linked to parent');
     }
-    return this.paymentRepository.find({
-      where: { student: { id: studentId } },
-    });
+
+    const { data, error } = await this.supabaseService.getClient()
+      .from('payments')
+      .select('*')
+      .eq('student_id', studentId);
+
+    if (error) {
+      throw new Error(`Failed to fetch payments: ${error.message}`);
+    }
+    return data;
   }
 }

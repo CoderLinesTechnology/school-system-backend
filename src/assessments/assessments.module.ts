@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { AssessmentsService } from './assessments.service';
 import { AssessmentsController } from './assessments.controller';
-import { Assessment } from '../entities/assessment.entity';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Assessment])],
-  providers: [AssessmentsService],
+  providers: [AssessmentsService, SupabaseService],
   controllers: [AssessmentsController],
 })
 export class AssessmentsModule {}

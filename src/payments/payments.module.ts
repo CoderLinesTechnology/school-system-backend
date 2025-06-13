@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
-import { Payment } from '../entities/payment.entity';
-import { Document } from '../entities/document.entity';
+import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Payment, Document])],
+  imports: [SupabaseModule],
   providers: [PaymentsService],
   controllers: [PaymentsController],
 })

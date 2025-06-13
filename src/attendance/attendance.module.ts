@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { AttendanceService } from './attendance.service';
 import { AttendanceController } from './attendance.controller';
-import { Attendance } from '../entities/attendance.entity';
+import { SupabaseModule } from '../supabase/supabase.module'; // Make sure you have this
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Attendance])],
+  imports: [SupabaseModule],
   providers: [AttendanceService],
   controllers: [AttendanceController],
 })

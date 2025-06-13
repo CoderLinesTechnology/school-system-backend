@@ -1,49 +1,76 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Document } from '../entities/document.entity';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CreateDocumentDto } from './dto/document.dto';
 
 @Injectable()
 export class DocumentService {
-  constructor(
-    @InjectRepository(Document) private documentRepository: Repository<Document>,
-  ) {}
+  constructor(private supabaseService: SupabaseService) {}
 
   async upload(dto: CreateDocumentDto & { file: any; uploadedById: number }) {
-    const document = this.documentRepository.create({
-      student: dto.studentId ? { id: dto.studentId } : null,
-      class: dto.classId ? { id: dto.classId } : null,
-      type: dto.type,
-      filename: dto.file.filename,
-      file_url: dto.file.path,
-      title: dto.file.originalname,
-      uploaded_by: { id: dto.uploadedById },
-      visibility: dto.visibility,
-    });
-    return this.documentRepository.save(document);
+    const { data, error } = await this.supabaseService.getClient()
+      .from('documents')
+      .insert({
+        student_id: dto.studentId || null,
+        class_id: dto.classId || null,
+        type: dto.type,
+        filename: dto.file.filename,
+        file_url: dto.file.path,
+        title: dto.file.originalname,
+        uploaded_by_id: dto.uploadedById,
+        visibility: dto.visibility,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to upload document: ${error.message}`);
+    }
+    return data;
   }
 
   async getStudentDocuments(studentId: number) {
-    return this.documentRepository.find({
-      where: { student: { id: studentId }, visibility: true },
-      relations: ['uploaded_by'],
-    });
+    const { data, error } = await this.supabaseService.getClient()
+      .from('documents')
+      .select(`
+        *,
+        uploaded_by:uploaded_by_id(*)
+      `)
+      .eq('student_id', studentId)
+      .eq('visibility', true);
+
+    if (error) {
+      throw new Error(`Failed to fetch documents: ${error.message}`);
+    }
+    return data;
   }
 
   async getClassDocuments(classId: number) {
-    return this.documentRepository.find({
-      where: { class: { id: classId }, visibility: true },
-      relations: ['uploaded_by'],
-    });
+    const { data, error } = await this.supabaseService.getClient()
+      .from('documents')
+      .select(`
+        *,
+        uploaded_by:uploaded_by_id(*)
+      `)
+      .eq('class_id', classId)
+      .eq('visibility', true);
+
+    if (error) {
+      throw new Error(`Failed to fetch documents: ${error.message}`);
+    }
+    return data;
   }
 
   async updateDocumentVisibility(id: number, visibility: boolean) {
-    const document = await this.documentRepository.findOne({ where: { id } });
-    if (!document) {
+    const { data, error } = await this.supabaseService.getClient()
+      .from('documents')
+      .update({ visibility })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
       throw new NotFoundException('Document not found');
     }
-    document.visibility = visibility;
-    return this.documentRepository.save(document);
+    return data;
   }
 }
