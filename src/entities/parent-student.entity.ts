@@ -1,15 +1,23 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { Parent } from './parent.entity';
 import { Student } from './student.entity';
 
-@Entity('parent_student')
+@Entity('parent_students')
 export class ParentStudent {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @ManyToOne(() => Parent)
+  @Index()
+  @ManyToOne(() => Parent, { nullable: false })
   parent: Parent;
 
-  @ManyToOne(() => Student)
+  @Index()
+  @ManyToOne(() => Student, { nullable: false })
   student: Student;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
 }

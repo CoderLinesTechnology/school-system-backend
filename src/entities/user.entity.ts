@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 export enum UserRole {
   SUPER_ADMIN = 'super_admin',
@@ -10,12 +10,13 @@ export enum UserRole {
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ length: 255 })
+  @Column({ length: 255, nullable: true })
   name: string;
 
+  @Index() // Optimize email lookups
   @Column({ length: 255, unique: true })
   email: string;
 
@@ -27,4 +28,7 @@ export class User {
 
   @CreateDateColumn()
   created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
 }

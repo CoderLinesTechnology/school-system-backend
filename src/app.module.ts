@@ -31,9 +31,9 @@ import { Attendance } from './entities/attendance.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
+        type: 'postgres',
         host: configService.get<string>('DATABASE_HOST'),
-        port: configService.get<number>('DATABASE_PORT'),
+        port: configService.get<number>('DATABASE_PORT', 5432),
         username: configService.get<string>('DATABASE_USER'),
         password: configService.get<string>('DATABASE_PASSWORD'),
         database: configService.get<string>('DATABASE_NAME'),
@@ -52,7 +52,9 @@ import { Attendance } from './entities/attendance.entity';
           Payment,
           Attendance,
         ],
-        synchronize: false, // Set to false in production
+        synchronize: true,
+        retryAttempts: 10,
+        retryDelay: 3000,
       }),
       inject: [ConfigService],
     }),
