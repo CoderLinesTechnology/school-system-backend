@@ -3,7 +3,7 @@ import { AttendanceService } from './attendance.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../entities/user.entity';
+import { UserRole } from '../types/user.types'; // Updated import
 import { RolesGuard } from '../auth/roles.guard';
 
 @Controller('api/attendance')

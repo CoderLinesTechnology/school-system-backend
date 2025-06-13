@@ -1,5 +1,5 @@
 import { IsString, IsEnum, IsInt, IsOptional } from 'class-validator';
-import { PaymentStatus } from '../../entities/payment.entity';
+import { PaymentStatus } from '../../types/payment.types'; // Updated import
 
 export class WebhookDto {
   @IsString()

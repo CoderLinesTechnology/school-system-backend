@@ -1,10 +1,5 @@
 import { IsInt, IsString, IsDateString, IsEnum } from 'class-validator';
-
-export enum AttendanceStatus {
-  Present = 'present',
-  Absent = 'absent',
-  Late = 'late',
-}
+import { AttendanceStatus } from '../../types/attendance.types'; // Updated import
 
 export class CreateAttendanceDto {
   @IsInt()

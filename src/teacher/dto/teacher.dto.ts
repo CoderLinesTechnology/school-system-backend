@@ -1,5 +1,5 @@
 import { IsString, IsInt, IsBoolean, IsEnum, IsOptional } from 'class-validator';
-import { DocumentType } from '../../entities/document.entity';
+import { DocumentType } from '../../types/document.types';
 
 export class CreateAssessmentDto {
   @IsInt()

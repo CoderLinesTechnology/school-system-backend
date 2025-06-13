@@ -1,13 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { PaymentStatus } from '../types/payment.types'; // Updated import
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { WebhookDto } from './dto/webhook.dto';
-
-export enum PaymentStatus {
-  PENDING = 'pending',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-}
 
 @Injectable()
 export class PaymentsService {

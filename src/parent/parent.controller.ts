@@ -2,7 +2,7 @@ import { Controller, Get, Param, UseGuards, Request } from '@nestjs/common';
 import { ParentService } from './parent.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../entities/user.entity';
+import { UserRole } from '../types/user.types'; // Updated import
 import { RolesGuard } from '../auth/roles.guard';
 
 @Controller('api/parent')
