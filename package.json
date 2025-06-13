@@ -3,10 +3,18 @@
   "version": "1.0.0",
   "description": "Backend for the School System",
   "scripts": {
-    "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start": "npx nest start",
+    "start:dev": "npx nest start --watch",
+    "start:debug": "npx nest start --debug --watch",
     "start:prod": "node dist/main",
-    "build": "nest build"
+    "build": "npx nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -32,5 +40,8 @@
     "@types/multer": "^1.4.13",
     "@types/node": "^20.16.10",
     "typescript": "^5.5.4"
+  },
+  "overrides": {
+    "brace-expansion": "^1.1.11"
   }
 }
