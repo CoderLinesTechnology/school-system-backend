@@ -1,52 +1,79 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { SupabaseService } from '../supabase/supabase.service';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { User, UserRole } from '../entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User) private userRepository: Repository<User>,
+    private supabaseService: SupabaseService,
     private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-    const user = this.userRepository.create({
-      name: registerDto.name,
-      email: registerDto.email,
-      password: hashedPassword,
-      role: registerDto.role as UserRole,
-    });
-    await this.userRepository.save(user);
-    return { success: true, message: 'User registered successfully' };
-  }
+  async register(dto: RegisterDto) {
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const { data, error } = await this.supabaseService.getClient()
+      .from('users')
+      .insert({
+        name: dto.name,
+        email: dto.email,
+        password: hashedPassword,
+        role: dto.role,
+      })
+      .select()
+      .single();
 
-  async login(loginDto: LoginDto) {
-    const user = await this.userRepository.findOne({ where: { email: loginDto.email } });
-    if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (error) {
+      throw new Error(`Registration failed: ${error.message}`);
     }
-    const payload = { sub: user.id, email: user.email, role: user.role };
+
+    const payload = { sub: data.id, email: data.email, role: data.role };
     return {
       access_token: this.jwtService.sign(payload),
+      user: data,
+    };
+  }
+
+  async login(dto: LoginDto) {
+    const { data, error } = await this.supabaseService.getClient()
+      .from('users')
+      .select()
+      .eq('email', dto.email)
+      .single();
+
+    if (error || !data) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const passwordMatch = await bcrypt.compare(dto.password, data.password);
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { sub: data.id, email: data.email, role: data.role };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: data,
     };
   }
 
   async getProfile(userId: number) {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
+    const { data, error } = await this.supabaseService.getClient()
+      .from('users')
+      .select('id, name, email, role')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) {
       throw new UnauthorizedException('User not found');
     }
-    return { id: user.id, name: user.name, email: user.email, role: user.role };
+
+    return data;
   }
 
   async logout() {
-    // Invalidate token on client-side or use a blacklist
-    return { success: true, message: 'Logged out successfully' };
+    return { message: 'Logged out successfully' };
   }
 }

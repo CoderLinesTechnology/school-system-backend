@@ -1,6 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { Student } from './student.entity';
-import { Class } from './class.entity';
 import { User } from './user.entity';
 
 export enum AttendanceStatus {
@@ -17,10 +16,6 @@ export class Attendance {
   @Index()
   @ManyToOne(() => Student, { nullable: false })
   student: Student;
-
-  @Index()
-  @ManyToOne(() => Class, { nullable: false })
-  class: Class;
 
   @Column({ type: 'date' })
   date: string;

@@ -38,16 +38,18 @@ export class TeacherService {
       class: dto.classId ? { id: dto.classId } : null,
       type: dto.type,
       filename: dto.file.filename,
+      file_url: dto.file.path,
+      title: dto.file.originalname,
       uploaded_by: { id: dto.uploadedById },
       visibility: dto.visibility,
     });
     return this.documentRepository.save(document);
   }
 
-  async recordAttendance(dto: CreateAttendanceDto) {
+  async recordAttendance(dto: CreateAttendanceDto & { recordedById: number }) {
     const attendance = this.attendanceRepository.create({
       student: { id: dto.studentId },
-      date: new Date(dto.date),
+      date: dto.date, // Keep as string since entity expects string
       status: dto.status,
       recorded_by: { id: dto.recordedById },
     });

@@ -1,36 +1,52 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Attendance } from '../entities/attendance.entity';
+import { Injectable } from '@nestjs/common';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 
 @Injectable()
 export class AttendanceService {
-  constructor(
-    @InjectRepository(Attendance) private attendanceRepository: Repository<Attendance>,
-  ) {}
+  constructor(private supabaseService: SupabaseService) {}
 
   async recordAttendance(dto: CreateAttendanceDto) {
-    const attendance = this.attendanceRepository.create({
-      student: { id: dto.studentId },
-      date: new Date(dto.date),
-      status: dto.status,
-      recorded_by: { id: dto.recordedById },
-    });
-    return this.attendanceRepository.save(attendance);
+    const { data, error } = await this.supabaseService.getClient()
+      .from('attendance')
+      .insert({
+        student_id: dto.studentId,
+        class_id: dto.classId,
+        date: dto.date,
+        status: dto.status,
+        recorded_by_id: dto.recordedById,
+        remarks: dto.remarks,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to record attendance: ${error.message}`);
+    }
+    return data;
   }
 
   async getStudentAttendance(studentId: number) {
-    return this.attendanceRepository.find({
-      where: { student: { id: studentId } },
-      relations: ['recorded_by'],
-    });
+    const { data, error } = await this.supabaseService.getClient()
+      .from('attendance')
+      .select('*, recorded_by:recorded_by_id(*), class:class_id(*)')
+      .eq('student_id', studentId);
+
+    if (error) {
+      throw new Error(`Failed to fetch attendance: ${error.message}`);
+    }
+    return data;
   }
 
   async getClassAttendance(classId: number) {
-    return this.attendanceRepository.find({
-      where: { student: { class: { id: classId } } },
-      relations: ['student', 'recorded_by'],
-    });
+    const { data, error } = await this.supabaseService.getClient()
+      .from('attendance')
+      .select('*, student:student_id(*), recorded_by:recorded_by_id(*)')
+      .eq('class_id', classId);
+
+    if (error) {
+      throw new Error(`Failed to fetch class attendance: ${error.message}`);
+    }
+    return data;
   }
 }

@@ -16,6 +16,8 @@ export class DocumentService {
       class: dto.classId ? { id: dto.classId } : null,
       type: dto.type,
       filename: dto.file.filename,
+      file_url: dto.file.path,
+      title: dto.file.originalname,
       uploaded_by: { id: dto.uploadedById },
       visibility: dto.visibility,
     });

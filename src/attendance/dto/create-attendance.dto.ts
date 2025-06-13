@@ -1,9 +1,17 @@
-import { IsInt, IsDateString, IsEnum, IsOptional } from 'class-validator';
-import { AttendanceStatus } from '../../entities/attendance.entity';
+import { IsInt, IsString, IsDateString, IsEnum } from 'class-validator';
+
+export enum AttendanceStatus {
+  Present = 'present',
+  Absent = 'absent',
+  Late = 'late',
+}
 
 export class CreateAttendanceDto {
   @IsInt()
   studentId: number;
+
+  @IsInt()
+  classId: number;
 
   @IsDateString()
   date: string;
@@ -11,7 +19,9 @@ export class CreateAttendanceDto {
   @IsEnum(AttendanceStatus)
   status: AttendanceStatus;
 
-  @IsOptional()
   @IsInt()
-  recordedById?: number; // Add recordedById as optional
+  recordedById: number;
+
+  @IsString()
+  remarks?: string;
 }
