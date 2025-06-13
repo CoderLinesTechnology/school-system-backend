@@ -2,8 +2,15 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
-import { DocumentModule } from './document/document.module';
+import { AdminModule } from './admin/admin.module';
 import { TeacherModule } from './teacher/teacher.module';
+import { StudentModule } from './student/student.module';
+import { DocumentModule } from './document/document.module';
+import { PaymentsModule } from './payments/payments.module';
+import { AssessmentsModule } from './assessments/assessments.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ParentModule } from './parent/parent.module';
+import { AttendanceModule } from './attendance/attendance.module';
 import { User } from './entities/user.entity';
 import { School } from './entities/school.entity';
 import { SchoolAdmin } from './entities/school-admin.entity';
@@ -50,8 +57,15 @@ import { Attendance } from './entities/attendance.entity';
       inject: [ConfigService],
     }),
     AuthModule,
-    DocumentModule,
+    AdminModule,
     TeacherModule,
+    StudentModule,
+    DocumentModule,
+    PaymentsModule,
+    AssessmentsModule,
+    NotificationsModule,
+    ParentModule,
+    AttendanceModule,
   ],
 })
 export class AppModule {}

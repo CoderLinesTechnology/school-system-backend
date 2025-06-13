@@ -1,0 +1,16 @@
+import { IsInt, IsBoolean, IsEnum } from 'class-validator';
+import { DocumentType } from '../../entities/document.entity';
+
+export class CreateDocumentDto {
+  @IsInt({ optional: true })
+  studentId?: number;
+
+  @IsInt({ optional: true })
+  classId?: number;
+
+  @IsEnum(DocumentType)
+  type: DocumentType;
+
+  @IsBoolean()
+  visibility: boolean;
+}
