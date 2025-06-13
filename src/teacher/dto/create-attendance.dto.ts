@@ -1,4 +1,4 @@
-import { IsInt, IsDateString, IsEnum, IsOptional } from 'class-validator';
+import { IsInt, IsDateString, IsEnum } from 'class-validator';
 import { AttendanceStatus } from '../../entities/attendance.entity';
 
 export class CreateAttendanceDto {
@@ -11,7 +11,5 @@ export class CreateAttendanceDto {
   @IsEnum(AttendanceStatus)
   status: AttendanceStatus;
 
-  @IsOptional()
-  @IsInt()
-  recordedById?: number; // Add recordedById as optional
+  recordedById?: number; // Add this to fix errors
 }

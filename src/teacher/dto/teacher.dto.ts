@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsBoolean, IsEnum } from 'class-validator';
+import { IsString, IsInt, IsBoolean, IsEnum, IsOptional } from 'class-validator';
 import { DocumentType } from '../../entities/document.entity';
 
 export class CreateAssessmentDto {
@@ -16,10 +16,12 @@ export class CreateAssessmentDto {
 }
 
 export class CreateDocumentDto {
-  @IsInt({ optional: true })
+  @IsOptional()
+  @IsInt()
   studentId?: number;
 
-  @IsInt({ optional: true })
+  @IsOptional()
+  @IsInt()
   classId?: number;
 
   @IsEnum(DocumentType)

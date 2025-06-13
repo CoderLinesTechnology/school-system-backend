@@ -32,7 +32,7 @@ export class TeacherService {
     });
   }
 
-  async uploadDocument(dto: CreateDocumentDto) {
+  async uploadDocument(dto: CreateDocumentDto & { file: any; uploadedById: number }) {
     const document = this.documentRepository.create({
       student: dto.studentId ? { id: dto.studentId } : null,
       class: dto.classId ? { id: dto.classId } : null,
@@ -47,7 +47,7 @@ export class TeacherService {
   async recordAttendance(dto: CreateAttendanceDto) {
     const attendance = this.attendanceRepository.create({
       student: { id: dto.studentId },
-      date: dto.date,
+      date: new Date(dto.date),
       status: dto.status,
       recorded_by: { id: dto.recordedById },
     });

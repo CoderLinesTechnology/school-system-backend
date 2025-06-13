@@ -33,8 +33,8 @@ export class TeacherController {
   ) {
     return this.teacherService.uploadDocument({
       ...body,
-      file,
       uploadedById: req.user.sub,
+      file,
     });
   }
 

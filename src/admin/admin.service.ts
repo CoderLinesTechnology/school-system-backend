@@ -6,7 +6,7 @@ import { Teacher } from '../entities/teacher.entity';
 import { Student } from '../entities/student.entity';
 import { Parent } from '../entities/parent.entity';
 import { Document } from '../entities/document.entity';
-import { User } from '../entities/user.entity';
+import { User, UserRole } from '../entities/user.entity';
 import { CreateSchoolDto } from './dto/create-school.dto';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { CreateStudentDto } from './dto/create-student.dto';
@@ -35,11 +35,11 @@ export class AdminService {
       name: dto.name,
       email: dto.email,
       password: hashedPassword,
-      role: 'teacher',
+      role: UserRole.TEACHER, // Use enum value
     });
     const savedUser = await this.userRepository.save(user);
     const teacher = this.teacherRepository.create({
-      user: savedUser,
+      user: savedUser, // Single User entity
       school: { id: dto.schoolId },
     });
     return this.teacherRepository.save(teacher);
@@ -51,11 +51,11 @@ export class AdminService {
       name: dto.name,
       email: dto.email,
       password: hashedPassword,
-      role: 'student',
+      role: UserRole.STUDENT, // Use enum value
     });
     const savedUser = await this.userRepository.save(user);
     const student = this.studentRepository.create({
-      user: savedUser,
+      user: savedUser, // Single User entity
       class: { id: dto.classId },
     });
     return this.studentRepository.save(student);
@@ -67,10 +67,12 @@ export class AdminService {
       name: dto.name,
       email: dto.email,
       password: hashedPassword,
-      role: 'parent',
+      role: UserRole.PARENT, // Use enum value
     });
     const savedUser = await this.userRepository.save(user);
-    const parent = this.parentRepository.create({ user: savedUser });
+    const parent = this.parentRepository.create({
+      user: savedUser, // Single User entity
+    });
     return this.parentRepository.save(parent);
   }
 

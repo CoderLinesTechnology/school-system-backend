@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsInt } from 'class-validator';
+import { IsString, IsEnum, IsInt, IsOptional } from 'class-validator';
 import { PaymentStatus } from '../../entities/payment.entity';
 
 export class WebhookDto {
@@ -8,6 +8,7 @@ export class WebhookDto {
   @IsEnum(PaymentStatus)
   status: PaymentStatus;
 
-  @IsInt({ optional: true })
+  @IsOptional()
+  @IsInt()
   documentId?: number;
 }

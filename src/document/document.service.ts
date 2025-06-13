@@ -10,7 +10,7 @@ export class DocumentService {
     @InjectRepository(Document) private documentRepository: Repository<Document>,
   ) {}
 
-  async upload(dto: CreateDocumentDto) {
+  async upload(dto: CreateDocumentDto & { file: any; uploadedById: number }) {
     const document = this.documentRepository.create({
       student: dto.studentId ? { id: dto.studentId } : null,
       class: dto.classId ? { id: dto.classId } : null,
