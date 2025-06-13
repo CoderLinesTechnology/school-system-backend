@@ -52,7 +52,7 @@ import { Attendance } from './entities/attendance.entity';
           Payment,
           Attendance,
         ],
-        synchronize: true, // Set to false in production
+        synchronize: false, // Set to false in production
       }),
       inject: [ConfigService],
     }),
