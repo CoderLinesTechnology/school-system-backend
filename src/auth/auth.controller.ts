@@ -1,30 +1,29 @@
 import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { AuthDto } from './dto/auth.dto';
+import { AuthGuard } from '../common/guards/auth.guard';
 
 @Controller('api/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
-
-  @Post('register')
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
-  }
+  constructor(private authService: AuthService) {}
 
   @Post('login')
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() authDto: AuthDto) {
+    return this.authService.login(authDto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Post('register')
+  async register(@Body() authDto: AuthDto & { name: string; role: string }) {
+    return this.authService.register(authDto);
+  }
+
+  @UseGuards(AuthGuard)
   @Get('me')
   async getProfile(@Request() req) {
-    return this.authService.getProfile(req.user.sub);
+    return this.authService.getProfile(req.user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard)
   @Post('logout')
   async logout() {
     return this.authService.logout();

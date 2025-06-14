@@ -1,111 +1,105 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
+import { Injectable, ForbiddenException } from '@nestjs/common';
+import { SupabaseService } from '../common/supabase/supabase.service';
+import { User } from '../common/interfaces/user.interface';
 
 @Injectable()
 export class ParentService {
   constructor(private supabaseService: SupabaseService) {}
 
-  async getProfile(parentId: number) {
-    const { data, error } = await this.supabaseService.getClient()
+  async getProfile(user: User) {
+    if (user.user_metadata.role !== 'parent') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
+    }
+
+    const { data, error } = await this.supabaseService.client
       .from('parents')
-      .select('*, user:user_id(*)')
-      .eq('user_id', parentId)
+      .select('*, users(*)')
+      .eq('user_id', user.id)
       .single();
 
-    if (error || !data) {
-      throw new NotFoundException('Parent not found');
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async getChildren(parentId: number) {
-    const { data, error } = await this.supabaseService.getClient()
-      .from('parent_students')
-      .select(`
-        student:student_id(
-          *,
-          user:user_id(*),
-          class:class_id(*)
-        )
-      `)
-      .eq('parent_id', parentId);
-
-    if (error) {
-      throw new Error(`Failed to fetch children: ${error.message}`);
+  async getChildren(user: User) {
+    if (user.user_metadata.role !== 'parent') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
     }
-    return data?.map(ps => ps.student) || [];
+
+    const { data, error } = await this.supabaseService.client
+      .from('parent_student')
+      .select('students(*, users(*))')
+      .eq('parent_id', user.id);
+
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async getChildAssessments(studentId: number, parentId: number) {
-    // First verify parent-student relationship
-    const { data: parentStudent, error: relationError } = await this.supabaseService.getClient()
-      .from('parent_students')
-      .select('id')
-      .eq('parent_id', parentId)
-      .eq('student_id', studentId)
-      .single();
-
-    if (relationError || !parentStudent) {
-      throw new NotFoundException('Student not linked to parent');
+  async getChildAssessments(studentId: string, user: User) {
+    if (user.user_metadata.role !== 'parent') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
     }
 
-    const { data, error } = await this.supabaseService.getClient()
+    const { data, error } = await this.supabaseService.client
       .from('assessments')
-      .select('*, subject:subject_id(*)')
+      .select('*')
       .eq('student_id', studentId);
 
-    if (error) {
-      throw new Error(`Failed to fetch assessments: ${error.message}`);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async getChildDocuments(studentId: number, parentId: number) {
-    // First verify parent-student relationship
-    const { data: parentStudent, error: relationError } = await this.supabaseService.getClient()
-      .from('parent_students')
-      .select('id')
-      .eq('parent_id', parentId)
-      .eq('student_id', studentId)
-      .single();
-
-    if (relationError || !parentStudent) {
-      throw new NotFoundException('Student not linked to parent');
+  async getChildDocuments(studentId: string, user: User) {
+    if (user.user_metadata.role !== 'parent') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
     }
 
-    const { data, error } = await this.supabaseService.getClient()
+    const { data, error } = await this.supabaseService.client
       .from('documents')
-      .select('*, uploaded_by:uploaded_by_id(*)')
+      .select('*')
       .eq('student_id', studentId)
       .eq('visibility', true);
 
-    if (error) {
-      throw new Error(`Failed to fetch documents: ${error.message}`);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async getChildPayments(studentId: number, parentId: number) {
-    // First verify parent-student relationship
-    const { data: parentStudent, error: relationError } = await this.supabaseService.getClient()
-      .from('parent_students')
-      .select('id')
-      .eq('parent_id', parentId)
-      .eq('student_id', studentId)
-      .single();
-
-    if (relationError || !parentStudent) {
-      throw new NotFoundException('Student not linked to parent');
+  async getChildPayments(studentId: string, user: User) {
+    if (user.user_metadata.role !== 'parent') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
     }
 
-    const { data, error } = await this.supabaseService.getClient()
+    const { data, error } = await this.supabaseService.client
       .from('payments')
       .select('*')
       .eq('student_id', studentId);
 
-    if (error) {
-      throw new Error(`Failed to fetch payments: ${error.message}`);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 }

@@ -1,48 +1,44 @@
-import { Controller, Post, Body, Get, Param, UseGuards, UseInterceptors, UploadedFile, Request } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { Controller, Post, Body, Get, Param, UseGuards, Request } from '@nestjs/common';
 import { TeacherService } from './teacher.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../types/user.types';
-import { RolesGuard } from '../auth/roles.guard';
-import { CreateAssessmentDto, CreateDocumentDto } from './dto/teacher.dto';
+import { CreateAssessmentDto } from './dto/create-assessment.dto';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { RoleGuard } from '../common/guards/role.guard';
+import { SetMetadata } from '@nestjs/common';
 
 @Controller('api/teacher')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.TEACHER)
+@UseGuards(AuthGuard)
 export class TeacherController {
-  constructor(private readonly teacherService: TeacherService) {}
+  constructor(private teacherService: TeacherService) {}
 
   @Post('assessment')
-  async createAssessment(@Body() dto: CreateAssessmentDto) {
-    return this.teacherService.createAssessment(dto);
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['teacher'])
+  async createAssessment(@Body() dto: CreateAssessmentDto, @Request() req) {
+    return this.teacherService.createAssessment(dto, req.user);
   }
 
-  @Get('assessment/:student_id')
-  async getStudentAssessments(@Param('student_id') studentId: string) {
-    return this.teacherService.getStudentAssessments(+studentId);
+  @Get('assessment/:studentId')
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['teacher'])
+  async getStudentAssessments(@Param('studentId') studentId: string, @Request() req) {
+    return this.teacherService.getStudentAssessments(studentId, req.user);
   }
 
   @Post('documents')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['teacher'])
   async uploadDocument(
-    @UploadedFile() file: any,
-    @Body() body: CreateDocumentDto,
+    @Body() dto: { studentId: string; classId: string; type: string; filename: string },
     @Request() req,
   ) {
-    return this.teacherService.uploadDocument({
-      ...body,
-      uploadedById: req.user.sub,
-      file,
-    });
+    return this.teacherService.uploadDocument(dto, req.user);
   }
 
   @Post('attendance')
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['teacher'])
   async recordAttendance(@Body() dto: CreateAttendanceDto, @Request() req) {
-    return this.teacherService.recordAttendance({
-      ...dto,
-      recordedById: req.user.sub,
-    });
+    return this.teacherService.recordAttendance(dto, req.user);
   }
 }

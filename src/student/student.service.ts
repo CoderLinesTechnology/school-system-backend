@@ -1,100 +1,86 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
+import { Injectable, ForbiddenException } from '@nestjs/common';
+import { SupabaseService } from '../common/supabase/supabase.service';
+import { User } from '../common/interfaces/user.interface';
 
 @Injectable()
 export class StudentService {
   constructor(private supabaseService: SupabaseService) {}
 
-  async getProfile(userId: number) {
-    const { data, error } = await this.supabaseService.getClient()
+  async getProfile(user: User) {
+    if (user.user_metadata.role !== 'student') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
+    }
+
+    const { data, error } = await this.supabaseService.client
       .from('students')
-      .select(`
-        *,
-        user:user_id(*),
-        class:class_id(*)
-      `)
-      .eq('user_id', userId)
+      .select('*, users(*)')
+      .eq('user_id', user.id)
       .single();
 
-    if (error || !data) {
-      throw new NotFoundException('Student not found');
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async getDocuments(userId: number) {
-    // First get the student record
-    const { data: student } = await this.supabaseService.getClient()
-      .from('students')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
-
-    if (!student) {
-      throw new NotFoundException('Student not found');
+  async getDocuments(user: User) {
+    if (user.user_metadata.role !== 'student') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
     }
 
-    const { data, error } = await this.supabaseService.getClient()
+    const { data, error } = await this.supabaseService.client
       .from('documents')
-      .select(`
-        *,
-        uploaded_by:uploaded_by_id(*)
-      `)
-      .eq('student_id', student.id)
+      .select('*')
+      .eq('student_id', user.id)
       .eq('visibility', true);
 
-    if (error) {
-      throw new Error(`Failed to fetch documents: ${error.message}`);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async getAssessments(userId: number) {
-    // First get the student record
-    const { data: student } = await this.supabaseService.getClient()
-      .from('students')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
-
-    if (!student) {
-      throw new NotFoundException('Student not found');
+  async getAssessments(user: User) {
+    if (user.user_metadata.role !== 'student') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
     }
 
-    const { data, error } = await this.supabaseService.getClient()
+    const { data, error } = await this.supabaseService.client
       .from('assessments')
-      .select(`
-        *,
-        subject:subject_id(*)
-      `)
-      .eq('student_id', student.id);
+      .select('*')
+      .eq('student_id', user.id);
 
-    if (error) {
-      throw new Error(`Failed to fetch assessments: ${error.message}`);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async getPayments(userId: number) {
-    // First get the student record
-    const { data: student } = await this.supabaseService.getClient()
-      .from('students')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
-
-    if (!student) {
-      throw new NotFoundException('Student not found');
+  async getPayments(user: User) {
+    if (user.user_metadata.role !== 'student') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
     }
 
-    const { data, error } = await this.supabaseService.getClient()
+    const { data, error } = await this.supabaseService.client
       .from('payments')
       .select('*')
-      .eq('student_id', student.id);
+      .eq('student_id', user.id);
 
-    if (error) {
-      throw new Error(`Failed to fetch payments: ${error.message}`);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 }

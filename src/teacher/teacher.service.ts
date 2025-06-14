@@ -1,82 +1,105 @@
-import { Injectable } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
-import { CreateAssessmentDto, CreateDocumentDto } from './dto/teacher.dto';
+import { Injectable, ForbiddenException } from '@nestjs/common';
+import { SupabaseService } from '../common/supabase/supabase.service';
+import { CreateAssessmentDto } from './dto/create-assessment.dto';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
+import { User } from '../common/interfaces/user.interface';
 
 @Injectable()
 export class TeacherService {
   constructor(private supabaseService: SupabaseService) {}
 
-  async createAssessment(dto: CreateAssessmentDto) {
-    const { data, error } = await this.supabaseService.getClient()
+  async createAssessment(dto: CreateAssessmentDto, user: User) {
+    if (user.user_metadata.role !== 'teacher') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
+    }
+
+    const { data, error } = await this.supabaseService.client
       .from('assessments')
       .insert({
         student_id: dto.studentId,
         subject_id: dto.subjectId,
-        score: dto.grade,
+        score: dto.score,
         term: dto.term,
       })
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Failed to create assessment: ${error.message}`);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async getStudentAssessments(studentId: number) {
-    const { data, error } = await this.supabaseService.getClient()
+  async getStudentAssessments(studentId: string, user: User) {
+    if (user.user_metadata.role !== 'teacher') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
+    }
+
+    const { data, error } = await this.supabaseService.client
       .from('assessments')
-      .select(`
-        *,
-        subject:subject_id(*)
-      `)
+      .select('*')
       .eq('student_id', studentId);
 
-    if (error) {
-      throw new Error(`Failed to fetch assessments: ${error.message}`);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async uploadDocument(dto: CreateDocumentDto & { file: any; uploadedById: number }) {
-    const { data, error } = await this.supabaseService.getClient()
+  async uploadDocument(dto: { studentId: string; classId: string; type: string; filename: string }, user: User) {
+    if (user.user_metadata.role !== 'teacher') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
+    }
+
+    const { data, error } = await this.supabaseService.client
       .from('documents')
       .insert({
-        student_id: dto.studentId || null,
-        class_id: dto.classId || null,
+        student_id: dto.studentId,
+        class_id: dto.classId,
         type: dto.type,
-        filename: dto.file.filename,
-        file_url: dto.file.path,
-        title: dto.file.originalname,
-        uploaded_by_id: dto.uploadedById,
-        visibility: dto.visibility,
+        filename: dto.filename,
+        uploaded_by: user.id,
       })
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Failed to upload document: ${error.message}`);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async recordAttendance(dto: CreateAttendanceDto & { recordedById: number }) {
-    const { data, error } = await this.supabaseService.getClient()
+  async recordAttendance(dto: CreateAttendanceDto, user: User) {
+    if (user.user_metadata.role !== 'teacher') {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
+    }
+
+    const { data, error } = await this.supabaseService.client
       .from('attendance')
       .insert({
         student_id: dto.studentId,
         date: dto.date,
         status: dto.status,
-        recorded_by_id: dto.recordedById,
+        recorded_by: user.id,
       })
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Failed to record attendance: ${error.message}`);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 }

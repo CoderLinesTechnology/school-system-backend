@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ParentService } from './parent.service';
 import { ParentController } from './parent.controller';
-import { SupabaseModule } from '../supabase/supabase.module';
+import { ParentService } from './parent.service';
+import { SupabaseService } from '../common/supabase/supabase.service';
 
 @Module({
-  imports: [SupabaseModule],
-  providers: [ParentService],
   controllers: [ParentController],
+  providers: [ParentService, SupabaseService],
 })
 export class ParentModule {}

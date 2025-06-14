@@ -1,31 +1,33 @@
-import { Controller, Post, Get, Param, UseGuards, UseInterceptors, UploadedFile, Body, Request } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { Controller, Post, Body, Get, Param, UseGuards, Request } from '@nestjs/common';
 import { DocumentService } from './document.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CreateDocumentDto } from './dto/document.dto';
+import { UploadDocumentDto } from './dto/upload-document.dto';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { RoleGuard } from '../common/guards/role.guard';
+import { SetMetadata } from '@nestjs/common';
 
 @Controller('api/documents')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard)
 export class DocumentController {
-  constructor(private readonly documentService: DocumentService) {}
+  constructor(private documentService: DocumentService) {}
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
-  async upload(@UploadedFile() file: any, @Body() body: CreateDocumentDto, @Request() req) {
-    return this.documentService.upload({
-      ...body,
-      file,
-      uploadedById: req.user.sub,
-    });
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['teacher', 'school_admin'])
+  async uploadDocument(@Body() dto: UploadDocumentDto, @Request() req) {
+    return this.documentService.uploadDocument(dto, req.user);
   }
 
   @Get('student/:id')
-  async getStudentDocuments(@Param('id') studentId: string) {
-    return this.documentService.getStudentDocuments(+studentId);
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['student', 'teacher', 'school_admin', 'parent'])
+  async getStudentDocuments(@Param('id') studentId: string, @Request() req) {
+    return this.documentService.getStudentDocuments(studentId, req.user);
   }
 
   @Get('class/:id')
-  async getClassDocuments(@Param('id') classId: string) {
-    return this.documentService.getClassDocuments(+classId);
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['teacher', 'school_admin'])
+  async getClassDocuments(@Param('id') classId: string, @Request() req) {
+    return this.documentService.getClassDocuments(classId, req.user);
   }
 }

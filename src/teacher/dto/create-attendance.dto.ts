@@ -1,23 +1,12 @@
-import { IsInt, IsDateString, IsEnum } from 'class-validator';
-import { DocumentType } from '../../types/document.types';
-
-// Define the AttendanceStatus enum
-export enum AttendanceStatus {
-  PRESENT = 'present',
-  ABSENT = 'absent',
-  LATE = 'late',
-  EXCUSED = 'excused'
-}
+import { IsString, IsDateString, IsIn } from 'class-validator';
 
 export class CreateAttendanceDto {
-  @IsInt()
-  studentId: number;
+  @IsString()
+  studentId: string;
 
   @IsDateString()
   date: string;
 
-  @IsEnum(AttendanceStatus)
-  status: AttendanceStatus;
-
-  recordedById?: number; // Add this to fix errors
+  @IsIn(['present', 'absent'])
+  status: string;
 }

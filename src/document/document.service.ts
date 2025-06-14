@@ -1,76 +1,79 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
-import { CreateDocumentDto } from './dto/document.dto';
+import { Injectable, ForbiddenException } from '@nestjs/common';
+import { SupabaseService } from '../common/supabase/supabase.service';
+import { UploadDocumentDto } from './dto/upload-document.dto';
+import { User } from '../common/interfaces/user.interface';
 
 @Injectable()
 export class DocumentService {
   constructor(private supabaseService: SupabaseService) {}
 
-  async upload(dto: CreateDocumentDto & { file: any; uploadedById: number }) {
-    const { data, error } = await this.supabaseService.getClient()
+  async uploadDocument(dto: UploadDocumentDto, user: User) {
+    if (!['teacher', 'school_admin'].includes(user.user_metadata.role)) {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
+    }
+
+    const { data, error } = await this.supabaseService.client
       .from('documents')
       .insert({
-        student_id: dto.studentId || null,
-        class_id: dto.classId || null,
+        student_id: dto.studentId,
+        class_id: dto.classId,
         type: dto.type,
-        filename: dto.file.filename,
-        file_url: dto.file.path,
-        title: dto.file.originalname,
-        uploaded_by_id: dto.uploadedById,
-        visibility: dto.visibility,
+        filename: dto.filename,
+        uploaded_by: user.id,
       })
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Failed to upload document: ${error.message}`);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async getStudentDocuments(studentId: number) {
-    const { data, error } = await this.supabaseService.getClient()
-      .from('documents')
-      .select(`
-        *,
-        uploaded_by:uploaded_by_id(*)
-      `)
-      .eq('student_id', studentId)
-      .eq('visibility', true);
-
-    if (error) {
-      throw new Error(`Failed to fetch documents: ${error.message}`);
+  async getStudentDocuments(studentId: string, user: User) {
+    if (!['student', 'teacher', 'school_admin', 'parent'].includes(user.user_metadata.role)) {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
     }
-    return data;
+
+    const query = this.supabaseService.client
+      .from('documents')
+      .select('*')
+      .eq('student_id', studentId);
+
+    if (user.user_metadata.role === 'student') {
+      query.eq('visibility', true);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 
-  async getClassDocuments(classId: number) {
-    const { data, error } = await this.supabaseService.getClient()
-      .from('documents')
-      .select(`
-        *,
-        uploaded_by:uploaded_by_id(*)
-      `)
-      .eq('class_id', classId)
-      .eq('visibility', true);
-
-    if (error) {
-      throw new Error(`Failed to fetch documents: ${error.message}`);
+  async getClassDocuments(classId: string, user: User) {
+    if (!['teacher', 'school_admin'].includes(user.user_metadata.role)) {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Insufficient permissions',
+        error_code: 'AUTH_403',
+      });
     }
-    return data;
-  }
 
-  async updateDocumentVisibility(id: number, visibility: boolean) {
-    const { data, error } = await this.supabaseService.getClient()
+    const { data, error } = await this.supabaseService.client
       .from('documents')
-      .update({ visibility })
-      .eq('id', id)
-      .select()
-      .single();
+      .select('*')
+      .eq('class_id', classId);
 
-    if (error) {
-      throw new NotFoundException('Document not found');
-    }
-    return data;
+    if (error) throw new Error(error.message);
+
+    return { success: true, data };
   }
 }

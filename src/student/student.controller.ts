@@ -1,33 +1,39 @@
 import { Controller, Get, UseGuards, Request } from '@nestjs/common';
 import { StudentService } from './student.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../types/user.types';
-import { RolesGuard } from '../auth/roles.guard';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { RoleGuard } from '../common/guards/role.guard';
+import { SetMetadata } from '@nestjs/common';
 
 @Controller('api/student')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.STUDENT)
+@UseGuards(AuthGuard)
 export class StudentController {
-  constructor(private readonly studentService: StudentService) {}
+  constructor(private studentService: StudentService) {}
 
   @Get('profile')
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['student'])
   async getProfile(@Request() req) {
-    return this.studentService.getProfile(req.user.sub);
+    return this.studentService.getProfile(req.user);
   }
 
   @Get('documents')
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['student'])
   async getDocuments(@Request() req) {
-    return this.studentService.getDocuments(req.user.sub);
+    return this.studentService.getDocuments(req.user);
   }
 
   @Get('assessments')
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['student'])
   async getAssessments(@Request() req) {
-    return this.studentService.getAssessments(req.user.sub);
+    return this.studentService.getAssessments(req.user);
   }
 
   @Get('payments')
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['student'])
   async getPayments(@Request() req) {
-    return this.studentService.getPayments(req.user.sub);
+    return this.studentService.getPayments(req.user);
   }
 }

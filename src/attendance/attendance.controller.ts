@@ -1,32 +1,33 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, Request } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
-import { CreateAttendanceDto } from './dto/create-attendance.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '../types/user.types'; // Updated import
-import { RolesGuard } from '../auth/roles.guard';
+import { RecordAttendanceDto } from './dto/record-attendance.dto';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { RoleGuard } from '../common/guards/role.guard';
+import { SetMetadata } from '@nestjs/common';
 
 @Controller('api/attendance')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.TEACHER, UserRole.SCHOOL_ADMIN)
+@UseGuards(AuthGuard)
 export class AttendanceController {
-  constructor(private readonly attendanceService: AttendanceService) {}
+  constructor(private attendanceService: AttendanceService) {}
 
   @Post('record')
-  async recordAttendance(@Body() dto: CreateAttendanceDto, @Request() req) {
-    return this.attendanceService.recordAttendance({
-      ...dto,
-      recordedById: req.user.sub,
-    });
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['teacher'])
+  async recordAttendance(@Body() dto: RecordAttendanceDto, @Request() req) {
+    return this.attendanceService.recordAttendance(dto, req.user);
   }
 
   @Get('student/:id')
-  async getStudentAttendance(@Param('id') studentId: string) {
-    return this.attendanceService.getStudentAttendance(+studentId);
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['student', 'teacher', 'school_admin', 'parent'])
+  async getStudentAttendance(@Param('id') studentId: string, @Request() req) {
+    return this.attendanceService.getStudentAttendance(studentId, req.user);
   }
 
   @Get('class/:id')
-  async getClassAttendance(@Param('id') classId: string) {
-    return this.attendanceService.getClassAttendance(+classId);
+  @UseGuards(RoleGuard)
+  @SetMetadata('roles', ['teacher', 'school_admin'])
+  async getClassAttendance(@Param('id') classId: string, @Request() req) {
+    return this.attendanceService.getClassAttendance(classId, req.user);
   }
 }
